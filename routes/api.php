@@ -1,9 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\PingController;
 
-Route::get('/_health', function () {
-    return [
-        'ok' => true,
-    ];
-});
+Route::get('/ping', PingController::class);

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use App\Support\ApiResponse;
+use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -32,6 +33,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 message: 'Route not found',
                 details: null,
                 status: 404
+            );
+        });
+        $exceptions->render(function (Throwable $e) {
+            return ApiResponse::error(
+                code: 'INTERNAL_ERROR',
+                message: 'Internal server error',
+                details: null,
+                status: 500
             );
         });
     })->create();

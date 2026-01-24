@@ -1,59 +1,208 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel JSON API – gyakorlóprojekt
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Ez a projekt egy **Laravel-alapú, tisztán JSON API**, amelynek célja a modern backend API-gondolkodás, validáció és egységes hibakezelés gyakorlása.
 
-## About Laravel
+A Laravel itt **nem weboldalként**, hanem **API-ként** működik.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Célok
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Laravel használata mint JSON API
+- Egységes response contract (success / error)
+- FormRequest alapú validáció
+- Globális error kezelés (422 / 404 / 500)
+- Vékony controller logika
+- Portfólióbarát projektstruktúra
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Indítás
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Függőségek telepítése  
+composer install
 
-## Laravel Sponsors
+2. Környezeti fájl létrehozása  
+.env.example másolása .env néven
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+3. Alkalmazáskulcs generálása  
+php artisan key:generate
 
-### Premium Partners
+4. Fejlesztői szerver indítása  
+php artisan serve
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Az API alapértelmezetten a http://localhost:8000 címen érhető el.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## API Response Contract
 
-## Code of Conduct
+### Sikeres válasz
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Minden sikeres válasz ugyanebben a struktúrában érkezik:
 
-## Security Vulnerabilities
+```
+{
+  "ok": true,
+  "data": ...,
+  "meta": {
+    "timestamp": "ISO-8601 dátum"
+  }
+}
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### Hiba válasz
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Minden hiba egységes formátumban tér vissza:
+
+```
+{
+  "ok": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": { ... }   // opcionális
+  },
+  "meta": {
+    "timestamp": "ISO-8601 dátum"
+  }
+}
+```
+
+---
+
+## Endpointok
+
+### GET /api/ping
+
+Egyszerű healthcheck endpoint.
+
+Válasz példa:
+
+```
+{
+  "ok": true,
+  "data": "pong",
+  "meta": {
+    "timestamp": "..."
+  }
+}
+```
+
+---
+
+### POST /api/echo
+
+Visszaadja a validált request body-t.
+
+Elvárt request JSON:
+
+```
+{
+  "message": "string",
+  "tags": ["string", "string"]
+}
+```
+
+Sikeres válasz példa:
+
+```
+{
+  "ok": true,
+  "data": {
+    "message": "hello",
+    "tags": ["a", "b"]
+  },
+  "meta": {
+    "timestamp": "..."
+  }
+}
+```
+
+---
+
+## Validáció
+
+A POST /api/echo endpoint FormRequestet használ.
+
+Szabályok:
+- message: kötelező string (1–255 karakter)
+- tags: opcionális array
+- tags.*: string
+
+---
+
+## Hibakezelés
+
+### 422 – Validációs hiba
+
+Ha a validáció elbukik:
+
+```
+{
+  "ok": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request data",
+    "details": {
+      "message": ["The message field is required."]
+    }
+  },
+  "meta": {
+    "timestamp": "..."
+  }
+}
+```
+
+---
+
+### 404 – Nem létező útvonal
+
+```
+{
+  "ok": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Route not found"
+  },
+  "meta": {
+    "timestamp": "..."
+  }
+}
+```
+
+---
+
+### 500 – Nem várt hiba
+
+```
+{
+  "ok": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal server error"
+  },
+  "meta": {
+    "timestamp": "..."
+  }
+}
+```
+
+---
+
+## Technikai megjegyzések
+
+- Validáció: FormRequest (EchoRequest)
+- Response: központi ApiResponse helper
+- Exception mapping: globálisan, bootstrap/app.php-ban
+- Controller logika minimális
+- API-first szemlélet
+
+---
+
+## Projekt státusz
+
+A projekt funkcionálisan **kész**.  
+Ez egy lezárt, portfólióba tehető gyakorlóprojekt.
